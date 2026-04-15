@@ -87,24 +87,25 @@ button:active:not(.account-select) {
               transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* First select staggers before second */
-.account-content-second {
-  transition-delay: 50ms;
-}
-
+/* Second select leads, first follows */
 .account-content.swap-out {
   opacity: 0;
   transform: translateY(8px);
+  transition-delay: 50ms;
+}
+
+.account-content-second.swap-out {
+  transition-delay: 0ms;
 }
 
 .account-content.swap-in {
   opacity: 0;
   transform: translateY(-8px);
-  transition-delay: 0ms;
+  transition-delay: 50ms;
 }
 
 .account-content-second.swap-in {
-  transition-delay: 50ms;
+  transition-delay: 0ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
