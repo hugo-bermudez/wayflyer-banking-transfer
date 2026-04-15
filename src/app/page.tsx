@@ -118,7 +118,7 @@ export default function TransferPage() {
     "On Thursday 16 April 2026"
   );
   const [swapRotation, setSwapRotation] = useState(0);
-  const [isSwapping, setIsSwapping] = useState(false);
+  const [swapPhase, setSwapPhase] = useState<"idle" | "out" | "in">("idle");
 
   // Store raw digits only (no formatting). Display is derived.
   const [rawDigits, setRawDigits] = useState("");
@@ -149,14 +149,22 @@ export default function TransferPage() {
   };
 
   const handleSwap = () => {
-    setIsSwapping(true);
+    if (swapPhase !== "idle") return;
+    // Phase 1: fade+slide out (down)
+    setSwapPhase("out");
     setSwapRotation((prev) => prev + 180);
-    // Swap accounts after fade out
+    // Phase 2: swap data, position content above, then slide in
     setTimeout(() => {
       const temp = fromAccount;
       setFromAccount(toAccount);
       setToAccount(temp);
-      setIsSwapping(false);
+      setSwapPhase("in");
+      // Phase 3: animate to resting position
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setSwapPhase("idle");
+        });
+      });
     }, 160);
   };
 
@@ -336,7 +344,7 @@ export default function TransferPage() {
                   gap: "var(--space-100)",
                 }}
               >
-                <div className={`account-content flex items-center flex-1 min-w-0${isSwapping ? " fading" : ""}`} style={{ gap: "var(--space-100)" }}>
+                <div className={`account-content flex items-center flex-1 min-w-0${swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
                   {fromAccount ? (
                     <AccountAvatar color={fromAccount.avatarColor} />
                   ) : (
@@ -408,7 +416,7 @@ export default function TransferPage() {
                   gap: "var(--space-100)",
                 }}
               >
-                <div className={`account-content flex items-center flex-1 min-w-0${isSwapping ? " fading" : ""}`} style={{ gap: "var(--space-100)" }}>
+                <div className={`account-content flex items-center flex-1 min-w-0${swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
                   {toAccount ? (
                     <AccountAvatar color={toAccount.avatarColor} />
                   ) : (

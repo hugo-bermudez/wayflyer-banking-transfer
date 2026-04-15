@@ -61,6 +61,8 @@ body {
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss02" 1, "cv02" 1, "cv03" 1, "cv04" 1,
+    "cv05" 1, "cv06" 1, "cv07" 1, "cv08" 1, "cv09" 1, "cv10" 1;
 }
 
 .input-border {
@@ -79,13 +81,20 @@ button:active:not(.account-select) {
   transform: scale(0.98);
 }
 
-/* Fade account content when swap button is pressed */
+/* Swap animation: fade+slide out down, then fade+slide in from up */
 .account-content {
-  transition: opacity 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 160ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 160ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.account-content.fading {
-  opacity: 0.4;
+.account-content.swap-out {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.account-content.swap-in {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 @media (prefers-reduced-motion: reduce) {
