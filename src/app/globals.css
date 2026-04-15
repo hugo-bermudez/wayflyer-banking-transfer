@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surface colors */
+  --surface-level-2: #ffffff;
+  --surface-level-3: #ffffff;
+  --nav-background: #f9f9f8;
+
+  /* Text colors */
+  --text-primary: #0d0d0d;
+  --text-secondary: #676765;
+  --text-inverse: #ffffff;
+
+  /* Border colors */
+  --border-default: #e6e6e5;
+  --border-input: #cdcccb;
+
+  /* Accent */
+  --accent-background: #001eff;
+
+  /* Spacing */
+  --space-0: 0px;
+  --space-25: 4px;
+  --space-50: 8px;
+  --space-75: 12px;
+  --space-100: 16px;
+  --space-125: 20px;
+  --space-150: 24px;
+  --space-250: 40px;
+  --space-500: 80px;
+
+  /* Radius */
+  --radius-100: 16px;
+  --radius-rounded: 10000px;
+
+  /* Border widths */
+  --border-sm: 1px;
+  --border-md: 1.5px;
+
+  /* Font */
+  --font-family: "Inter", sans-serif;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 32px;
+  --letter-spacing-compact: -0.5px;
+
+  /* Shadows */
+  --shadow-card: 0px 1px 1px 0px rgba(0, 0, 0, 0.02),
+    0px 4px 8px 4px rgba(0, 0, 0, 0.04),
+    0px 16px 24px -8px rgba(0, 0, 0, 0.08);
+  --shadow-button: 0px 4px 1px -2px rgba(0, 0, 0, 0.04);
+  --shadow-accent-button: 0px 4px 1px -2px rgba(0, 14, 121, 0.08);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: "Inter", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.input-border {
+  transition: border-color 100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-border:focus-within {
+  border-color: #676765 !important;
+}
+
+button {
+  transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active:not(.account-select) {
+  transform: scale(0.98);
+}
+
+/* Fade account content when swap button is pressed */
+.account-content {
+  transition: opacity 160ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.account-content.fading {
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swap-icon,
+  button {
+    transition-duration: 0.01ms !important;
+  }
 }

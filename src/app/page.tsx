@@ -1,65 +1,603 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import Image from "next/image";
+import {
+  NavArrowDown,
+  Xmark,
+  ArrowDown,
+} from "iconoir-react";
+
+interface Account {
+  name: string;
+  lastFour: string;
+  balance: string;
+  currency: string;
+  avatarColor: string;
+}
+
+const ACCOUNTS: Account[] = [
+  {
+    name: "Marketing Budget",
+    lastFour: "8323",
+    balance: "$125,085.50",
+    currency: "USD",
+    avatarColor: "#f7edf7",
+  },
+  {
+    name: "Operational Expenses",
+    lastFour: "5295",
+    balance: "$74,500.00",
+    currency: "USD",
+    avatarColor: "#e5f2ff",
+  },
+];
+
+function AccountAvatar({ color }: { color: string }) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div
+      className="flex items-center justify-center shrink-0"
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: 1000,
+        background: color,
+      }}
+    >
+      <Image
+        src="/icons/logo-w.svg"
+        alt=""
+        width={20}
+        height={15}
+        className="shrink-0"
+      />
+    </div>
+  );
+}
+
+function BankIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="shrink-0"
+    >
+      <path
+        d="M2 20H22"
+        stroke="#676765"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 20V12"
+        stroke="#676765"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 20V12"
+        stroke="#676765"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15 20V12"
+        stroke="#676765"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19 20V12"
+        stroke="#676765"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 3L2 9H22L12 3Z"
+        stroke="#676765"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export default function TransferPage() {
+  const [fromAccount, setFromAccount] = useState<Account | null>(ACCOUNTS[0]);
+  const [toAccount, setToAccount] = useState<Account | null>(ACCOUNTS[1]);
+  const [scheduledDate, setScheduledDate] = useState<string | null>(
+    "On Thursday 16 April 2026"
+  );
+  const [swapRotation, setSwapRotation] = useState(0);
+  const [isSwapping, setIsSwapping] = useState(false);
+
+  // Store raw digits only (no formatting). Display is derived.
+  const [rawDigits, setRawDigits] = useState("");
+
+  const hasAmount = rawDigits !== "";
+
+  const formatCurrency = (digits: string): string => {
+    if (digits === "") return "";
+    if (digits.length === 1) return digits;
+    if (digits.length === 2) return digits;
+
+    // 3+ digits: last 2 are decimals, rest is integer
+    const intPart = digits.slice(0, -2).replace(/^0+/, "") || "0";
+    const decPart = digits.slice(-2);
+
+    // Add thousand separators
+    const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return `${formatted}.${decPart}`;
+  };
+
+  // Derive display value from raw digits
+  const amount = formatCurrency(rawDigits);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Extract only digits from whatever the user typed/pasted
+    const digits = e.target.value.replace(/[^0-9]/g, "");
+    setRawDigits(digits);
+  };
+
+  const handleSwap = () => {
+    setIsSwapping(true);
+    setSwapRotation((prev) => prev + 180);
+    // Swap accounts after fade out
+    setTimeout(() => {
+      const temp = fromAccount;
+      setFromAccount(toAccount);
+      setToAccount(temp);
+      setIsSwapping(false);
+    }, 160);
+  };
+
+
+  return (
+    <div
+      className="flex flex-col items-center justify-center h-full"
+      style={{ background: "var(--nav-background)" }}
+    >
+      {/* Card container */}
+      <div
+        className="flex flex-col flex-1 w-full"
+        style={{
+          background: "var(--surface-level-3)",
+          border: "var(--border-sm) solid var(--border-default)",
+          boxShadow: "var(--shadow-card)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <header
+          className="flex items-center justify-between shrink-0"
+          style={{ padding: "var(--space-150)" }}
+        >
+          <Image
+            src="/icons/logo-w.svg"
+            alt="Wayflyer"
+            width={33}
+            height={24}
+            priority
+          />
+          <button
+            className="flex items-center justify-center shrink-0 cursor-pointer"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "var(--radius-rounded)",
+              border: "var(--border-md) solid var(--border-input)",
+              background: "transparent",
+            }}
+            aria-label="Close"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <Xmark width={16} height={16} strokeWidth={1.5} color="#0D0D0D" />
+          </button>
+        </header>
+
+        {/* Body */}
+        <main
+          className="flex flex-col items-center justify-center flex-1"
+          style={{
+            borderTop: "var(--border-sm) solid var(--border-default)",
+            borderBottom: "var(--border-sm) solid var(--border-default)",
+            paddingTop: "var(--space-250)",
+            paddingBottom: "var(--space-500)",
+            paddingLeft: "var(--space-250)",
+            paddingRight: "var(--space-250)",
+            gap: "var(--space-250)",
+          }}
+        >
+          {/* Title section */}
+          <div
+            className="flex flex-col w-full"
+            style={{ maxWidth: 526, gap: "var(--space-100)" }}
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <h1
+              className="font-medium"
+              style={{
+                fontSize: "var(--font-size-2xl)",
+                color: "var(--text-primary)",
+                letterSpacing: "var(--letter-spacing-compact)",
+                lineHeight: 1,
+              }}
+            >
+              Transfer
+            </h1>
+            <p
+              style={{
+                fontSize: "var(--font-size-md)",
+                color: "var(--text-secondary)",
+                lineHeight: 1,
+              }}
+            >
+              Enter the transfer details.
+            </p>
+          </div>
+
+          {/* Form */}
+          <div
+            className="flex flex-col items-center w-full"
+            style={{ maxWidth: 526, gap: "var(--space-150)" }}
+          >
+            {/* Amount input */}
+            <div
+              className="input-border flex items-center w-full"
+              style={{
+                height: 80,
+                borderRadius: "var(--radius-100)",
+                border: "var(--border-md) solid var(--border-input)",
+                padding: "var(--space-150)",
+                gap: "var(--space-25)",
+              }}
+            >
+              <span
+                className="font-medium shrink-0"
+                style={{
+                  fontSize: "var(--font-size-3xl)",
+                  color: "var(--text-secondary)",
+                  letterSpacing: "var(--letter-spacing-compact)",
+                  lineHeight: 1,
+                }}
+              >
+                $
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={amount}
+                onChange={handleAmountChange}
+                placeholder="0.00"
+                className="flex-1 min-w-0 font-medium bg-transparent outline-none placeholder:text-[var(--text-secondary)]"
+                style={{
+                  fontSize: "var(--font-size-3xl)",
+                  color: "var(--text-primary)",
+                  letterSpacing: "var(--letter-spacing-compact)",
+                  lineHeight: 1,
+                }}
+                aria-label="Transfer amount"
+              />
+              <button
+                className="flex items-center shrink-0 cursor-pointer"
+                style={{
+                  height: 40,
+                  borderRadius: "var(--radius-rounded)",
+                  border: "var(--border-md) solid var(--border-input)",
+                  paddingLeft: "var(--space-75)",
+                  paddingRight: "var(--space-75)",
+                  gap: "var(--space-25)",
+                  boxShadow: "var(--shadow-button)",
+                  background: "transparent",
+                }}
+              >
+                <Image
+                  src="/icons/flag-us.svg"
+                  alt="US flag"
+                  width={20}
+                  height={12}
+                  className="shrink-0"
+                />
+                <span
+                  className="font-medium"
+                  style={{
+                    fontSize: "var(--font-size-md)",
+                    color: "var(--text-primary)",
+                    paddingLeft: "var(--space-25)",
+                    paddingRight: "var(--space-25)",
+                    lineHeight: 1,
+                  }}
+                >
+                  USD
+                </span>
+              </button>
+            </div>
+
+            {/* From / To selectors */}
+            <div
+              className="relative flex flex-col items-center w-full"
+              style={{ gap: "var(--space-125)" }}
+            >
+              {/* From */}
+              <button
+                className="account-select flex items-center w-full cursor-pointer bg-transparent"
+                style={{
+                  height: 80,
+                  borderRadius: "var(--radius-100)",
+                  border: "var(--border-md) solid var(--border-input)",
+                  padding: "var(--space-100)",
+                  gap: "var(--space-100)",
+                }}
+              >
+                <div className={`account-content flex items-center flex-1 min-w-0${isSwapping ? " fading" : ""}`} style={{ gap: "var(--space-100)" }}>
+                  {fromAccount ? (
+                    <AccountAvatar color={fromAccount.avatarColor} />
+                  ) : (
+                    <div
+                      className="flex items-center justify-center shrink-0"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "var(--radius-rounded)",
+                      }}
+                    >
+                      <BankIcon />
+                    </div>
+                  )}
+                  <div
+                    className="flex flex-col flex-1 min-w-0 items-start justify-center"
+                    style={{ gap: "var(--space-50)" }}
+                  >
+                    <span
+                      className="font-medium"
+                      style={{
+                        fontSize: "var(--font-size-md)",
+                        color: "var(--text-primary)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {fromAccount
+                        ? `${fromAccount.name} ··${fromAccount.lastFour}`
+                        : "From"}
+                    </span>
+                    {fromAccount && (
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-secondary)",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {fromAccount.balance} · {fromAccount.currency}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div
+                  className="flex items-center justify-center shrink-0"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "var(--radius-rounded)",
+                  }}
+                >
+                  <NavArrowDown
+                    width={16}
+                    height={16}
+                    strokeWidth={1.5}
+                    color="#0D0D0D"
+                  />
+                </div>
+              </button>
+
+              {/* To */}
+              <button
+                className="account-select flex items-center w-full cursor-pointer bg-transparent"
+                style={{
+                  height: 80,
+                  borderRadius: "var(--radius-100)",
+                  border: "var(--border-md) solid var(--border-input)",
+                  padding: "var(--space-100)",
+                  gap: "var(--space-100)",
+                }}
+              >
+                <div className={`account-content flex items-center flex-1 min-w-0${isSwapping ? " fading" : ""}`} style={{ gap: "var(--space-100)" }}>
+                  {toAccount ? (
+                    <AccountAvatar color={toAccount.avatarColor} />
+                  ) : (
+                    <div
+                      className="flex items-center justify-center shrink-0"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "var(--radius-rounded)",
+                      }}
+                    >
+                      <BankIcon />
+                    </div>
+                  )}
+                  <div
+                    className="flex flex-col flex-1 min-w-0 items-start justify-center"
+                    style={{ gap: "var(--space-50)" }}
+                  >
+                    <span
+                      className="font-medium"
+                      style={{
+                        fontSize: "var(--font-size-md)",
+                        color: "var(--text-primary)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {toAccount
+                        ? `${toAccount.name} ··${toAccount.lastFour}`
+                        : "To"}
+                    </span>
+                    {toAccount && (
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-secondary)",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {toAccount.balance} · {toAccount.currency}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div
+                  className="flex items-center justify-center shrink-0"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "var(--radius-rounded)",
+                  }}
+                >
+                  <NavArrowDown
+                    width={16}
+                    height={16}
+                    strokeWidth={1.5}
+                    color="#0D0D0D"
+                  />
+                </div>
+              </button>
+
+              {/* Swap button - centered between From and To */}
+              <button
+                onClick={handleSwap}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer"
+                style={{
+                  width: "var(--space-250)",
+                  height: "var(--space-250)",
+                  borderRadius: "var(--radius-rounded)",
+                  border: "var(--border-md) solid var(--border-input)",
+                  background: "var(--surface-level-2)",
+                  boxShadow: "var(--shadow-button)",
+                }}
+                aria-label="Swap accounts"
+              >
+                <ArrowDown
+                  width={24}
+                  height={24}
+                  strokeWidth={1.5}
+                  color="#0D0D0D"
+                  className="swap-icon"
+                  style={{
+                    transform: `rotate(${swapRotation}deg)`,
+                    transition: "transform 160ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                />
+              </button>
+            </div>
+
+            {/* Schedule transfer */}
+            {scheduledDate ? (
+              <button
+                className="flex items-center justify-center cursor-pointer shrink-0"
+                style={{
+                  height: 32,
+                  borderRadius: "var(--radius-rounded)",
+                  border: "var(--border-md) solid var(--border-input)",
+                  paddingLeft: "var(--space-50)",
+                  paddingRight: "var(--space-50)",
+                  gap: 2,
+                  boxShadow: "var(--shadow-button)",
+                  background: "transparent",
+                }}
+                onClick={() => setScheduledDate(null)}
+              >
+                <span
+                  className="font-medium whitespace-nowrap"
+                  style={{
+                    fontSize: "var(--font-size-sm)",
+                    color: "var(--text-primary)",
+                    paddingLeft: "var(--space-25)",
+                    paddingRight: "var(--space-25)",
+                    lineHeight: 1,
+                  }}
+                >
+                  {scheduledDate}
+                </span>
+                <Xmark
+                  width={16}
+                  height={16}
+                  strokeWidth={1.5}
+                  color="#0D0D0D"
+                />
+              </button>
+            ) : (
+              <button
+                className="flex items-center justify-center cursor-pointer shrink-0"
+                style={{
+                  height: 32,
+                  borderRadius: "var(--radius-rounded)",
+                  border: "var(--border-md) solid var(--border-input)",
+                  paddingLeft: "var(--space-50)",
+                  paddingRight: "var(--space-50)",
+                  gap: 2,
+                  boxShadow: "var(--shadow-button)",
+                  background: "transparent",
+                }}
+                onClick={() =>
+                  setScheduledDate("On Thursday 16 April 2026")
+                }
+              >
+                <span
+                  className="font-medium whitespace-nowrap"
+                  style={{
+                    fontSize: "var(--font-size-sm)",
+                    color: "var(--text-primary)",
+                    paddingLeft: "var(--space-25)",
+                    paddingRight: "var(--space-25)",
+                    lineHeight: 1,
+                  }}
+                >
+                  Schedule transfer
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div
+            className="flex items-center justify-end w-full"
+            style={{ maxWidth: 526, gap: "var(--space-100)" }}
+          >
+            <button
+              className="flex flex-1 items-center justify-center cursor-pointer"
+              style={{
+                height: 40,
+                borderRadius: "var(--radius-rounded)",
+                background: "var(--accent-background)",
+                paddingLeft: "var(--space-75)",
+                paddingRight: "var(--space-75)",
+                boxShadow: "var(--shadow-accent-button)",
+                border: "none",
+              }}
+            >
+              <span
+                className="font-medium whitespace-nowrap"
+                style={{
+                  fontSize: "var(--font-size-md)",
+                  color: "var(--text-inverse)",
+                  paddingLeft: "var(--space-25)",
+                  paddingRight: "var(--space-25)",
+                  lineHeight: 1,
+                }}
+              >
+                Review transfer
+              </span>
+            </button>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
