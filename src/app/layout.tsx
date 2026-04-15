@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Transfer - Wayflyer Banking",
@@ -19,7 +12,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full`}>
+    <html lang="en" className="h-full">
+      <head>
+        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+      </head>
       <body className="h-full">{children}</body>
     </html>
   );

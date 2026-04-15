@@ -153,7 +153,7 @@ export default function TransferPage() {
     // Phase 1: fade+slide out (down)
     setSwapPhase("out");
     setSwapRotation((prev) => prev + 180);
-    // Phase 2: swap data, position content above, then slide in
+    // Phase 2: wait for both to finish out (140ms + 50ms stagger)
     setTimeout(() => {
       const temp = fromAccount;
       setFromAccount(toAccount);
@@ -165,7 +165,7 @@ export default function TransferPage() {
           setSwapPhase("idle");
         });
       });
-    }, 160);
+    }, 200);
   };
 
 
@@ -416,7 +416,7 @@ export default function TransferPage() {
                   gap: "var(--space-100)",
                 }}
               >
-                <div className={`account-content flex items-center flex-1 min-w-0${swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
+                <div className={`account-content account-content-second flex items-center flex-1 min-w-0${swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
                   {toAccount ? (
                     <AccountAvatar color={toAccount.avatarColor} />
                   ) : (
