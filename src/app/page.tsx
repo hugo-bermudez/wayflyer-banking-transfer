@@ -117,39 +117,49 @@ const PRESETS: Record<
   PresetKey,
   {
     rawDigits: string;
-    from: Account | null;
-    to: Account | null;
+    topAccount: Account | null;
+    bottomAccount: Account | null;
+    topLabel: string;
+    bottomLabel: string;
     scheduled: string | null;
     rotation: number;
   }
 > = {
-  filled: {
-    rawDigits: "1145000",
-    from: ACCOUNTS[0],
-    to: ACCOUNTS[1],
-    scheduled: "On Thursday 16 April 2026",
+  empty: {
+    rawDigits: "",
+    topAccount: null,
+    bottomAccount: null,
+    topLabel: "From",
+    bottomLabel: "To",
+    scheduled: null,
     rotation: 0,
   },
   half: {
     rawDigits: "50000",
-    from: null,
-    to: ACCOUNTS[0],
+    topAccount: null,
+    bottomAccount: ACCOUNTS[0],
+    topLabel: "To",
+    bottomLabel: "From",
     scheduled: null,
-    rotation: 180,
+    rotation: 0,
   },
-  empty: {
-    rawDigits: "",
-    from: null,
-    to: null,
-    scheduled: null,
+  filled: {
+    rawDigits: "1145000",
+    topAccount: ACCOUNTS[0],
+    bottomAccount: ACCOUNTS[1],
+    topLabel: "From",
+    bottomLabel: "To",
+    scheduled: "On Thursday 16 April 2026",
     rotation: 0,
   },
 };
 
 export default function TransferPage() {
   const [activePreset, setActivePreset] = useState<PresetKey>("filled");
-  const [fromAccount, setFromAccount] = useState<Account | null>(ACCOUNTS[0]);
-  const [toAccount, setToAccount] = useState<Account | null>(ACCOUNTS[1]);
+  const [topAccount, setTopAccount] = useState<Account | null>(ACCOUNTS[0]);
+  const [bottomAccount, setBottomAccount] = useState<Account | null>(ACCOUNTS[1]);
+  const [topLabel, setTopLabel] = useState("From");
+  const [bottomLabel, setBottomLabel] = useState("To");
   const [scheduledDate, setScheduledDate] = useState<string | null>(
     "On Thursday 16 April 2026"
   );
@@ -163,15 +173,17 @@ export default function TransferPage() {
   const applyPreset = (key: PresetKey) => {
     const p = PRESETS[key];
     const shouldAnimate = key !== "filled";
+    const accountsChanging = topAccount !== p.topAccount || bottomAccount !== p.bottomAccount;
 
-    if (shouldAnimate && (fromAccount !== p.from || toAccount !== p.to)) {
-      // Animate out, swap, animate in
+    if (shouldAnimate && accountsChanging) {
       setAnimationsEnabled(true);
       setSwapPhase("out");
       setTimeout(() => {
         setRawDigits(p.rawDigits);
-        setFromAccount(p.from);
-        setToAccount(p.to);
+        setTopAccount(p.topAccount);
+        setBottomAccount(p.bottomAccount);
+        setTopLabel(p.topLabel);
+        setBottomLabel(p.bottomLabel);
         setScheduledDate(p.scheduled);
         setSwapRotation(p.rotation);
         setSwapPhase("in");
@@ -182,56 +194,84 @@ export default function TransferPage() {
         });
       }, 200);
     } else {
-      // Instant — no animation
       setAnimationsEnabled(false);
       setSwapPhase("idle");
       setRawDigits(p.rawDigits);
-      setFromAccount(p.from);
-      setToAccount(p.to);
+      setTopAccount(p.topAccount);
+      setBottomAccount(p.bottomAccount);
+      setTopLabel(p.topLabel);
+      setBottomLabel(p.bottomLabel);
       setScheduledDate(p.scheduled);
       setSwapRotation(p.rotation);
     }
     setActivePreset(key);
   };
 
-  const hasAmount = rawDigits !== "";
-
   const formatCurrency = (digits: string): string => {
     if (digits === "") return "";
     if (digits.length === 1) return digits;
     if (digits.length === 2) return digits;
 
-    // 3+ digits: last 2 are decimals, rest is integer
     const intPart = digits.slice(0, -2).replace(/^0+/, "") || "0";
     const decPart = digits.slice(-2);
 
-    // Add thousand separators
     const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return `${formatted}.${decPart}`;
   };
 
-  // Derive display value from raw digits
   const amount = formatCurrency(rawDigits);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Extract only digits from whatever the user typed/pasted
     const digits = e.target.value.replace(/[^0-9]/g, "");
     setRawDigits(digits);
   };
 
   const handleSwap = () => {
     if (swapPhase !== "idle") return;
+
+    if (activePreset === "filled") {
+      // Filled: only animate the arrow, swap data instantly
+      setSwapRotation((prev) => prev + 180);
+      const tempAcc = topAccount;
+      setTopAccount(bottomAccount);
+      setBottomAccount(tempAcc);
+      const tempLabel = topLabel;
+      setTopLabel(bottomLabel);
+      setBottomLabel(tempLabel);
+      return;
+    }
+
+    if (activePreset === "empty") {
+      // Empty: swap labels only, animate selects
+      setAnimationsEnabled(true);
+      setSwapPhase("out");
+      setSwapRotation((prev) => prev + 180);
+      setTimeout(() => {
+        const tempLabel = topLabel;
+        setTopLabel(bottomLabel);
+        setBottomLabel(tempLabel);
+        setSwapPhase("in");
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setSwapPhase("idle");
+          });
+        });
+      }, 200);
+      return;
+    }
+
+    // Half and default: full swap with animation
     setAnimationsEnabled(true);
-    // Phase 1: fade+slide out (down)
     setSwapPhase("out");
     setSwapRotation((prev) => prev + 180);
-    // Phase 2: wait for both to finish out (140ms + 50ms stagger)
     setTimeout(() => {
-      const temp = fromAccount;
-      setFromAccount(toAccount);
-      setToAccount(temp);
+      const tempAcc = topAccount;
+      setTopAccount(bottomAccount);
+      setBottomAccount(tempAcc);
+      const tempLabel = topLabel;
+      setTopLabel(bottomLabel);
+      setBottomLabel(tempLabel);
       setSwapPhase("in");
-      // Phase 3: animate to resting position
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setSwapPhase("idle");
@@ -405,7 +445,7 @@ export default function TransferPage() {
               className="relative flex flex-col items-center w-full"
               style={{ gap: "var(--space-125)" }}
             >
-              {/* From */}
+              {/* Top selector */}
               <button
                 className="account-select flex items-center w-full cursor-pointer bg-transparent"
                 style={{
@@ -417,8 +457,8 @@ export default function TransferPage() {
                 }}
               >
                 <div className={`account-content flex items-center flex-1 min-w-0${animationsEnabled && swapPhase === "out" ? " swap-out" : animationsEnabled && swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
-                  {fromAccount ? (
-                    <AccountAvatar color={fromAccount.avatarColor} />
+                  {topAccount ? (
+                    <AccountAvatar color={topAccount.avatarColor} />
                   ) : (
                     <div
                       className="flex items-center justify-center shrink-0"
@@ -443,11 +483,11 @@ export default function TransferPage() {
                         lineHeight: 1,
                       }}
                     >
-                      {fromAccount
-                        ? `${fromAccount.name} ··${fromAccount.lastFour}`
-                        : "From"}
+                      {topAccount
+                        ? `${topAccount.name} ··${topAccount.lastFour}`
+                        : topLabel}
                     </span>
-                    {fromAccount && (
+                    {topAccount && (
                       <span
                         style={{
                           fontSize: 12,
@@ -455,7 +495,7 @@ export default function TransferPage() {
                           lineHeight: 1,
                         }}
                       >
-                        {fromAccount.balance} · {fromAccount.currency}
+                        {topAccount.balance} · {topAccount.currency}
                       </span>
                     )}
                   </div>
@@ -477,7 +517,7 @@ export default function TransferPage() {
                 </div>
               </button>
 
-              {/* To */}
+              {/* Bottom selector */}
               <button
                 className="account-select flex items-center w-full cursor-pointer bg-transparent"
                 style={{
@@ -488,9 +528,9 @@ export default function TransferPage() {
                   gap: "var(--space-100)",
                 }}
               >
-                <div className={`account-content account-content-second flex items-center flex-1 min-w-0${swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
-                  {toAccount ? (
-                    <AccountAvatar color={toAccount.avatarColor} />
+                <div className={`account-content account-content-second flex items-center flex-1 min-w-0${animationsEnabled && swapPhase === "out" ? " swap-out" : animationsEnabled && swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
+                  {bottomAccount ? (
+                    <AccountAvatar color={bottomAccount.avatarColor} />
                   ) : (
                     <div
                       className="flex items-center justify-center shrink-0"
@@ -515,11 +555,11 @@ export default function TransferPage() {
                         lineHeight: 1,
                       }}
                     >
-                      {toAccount
-                        ? `${toAccount.name} ··${toAccount.lastFour}`
-                        : "To"}
+                      {bottomAccount
+                        ? `${bottomAccount.name} ··${bottomAccount.lastFour}`
+                        : bottomLabel}
                     </span>
-                    {toAccount && (
+                    {bottomAccount && (
                       <span
                         style={{
                           fontSize: 12,
@@ -527,7 +567,7 @@ export default function TransferPage() {
                           lineHeight: 1,
                         }}
                       >
-                        {toAccount.balance} · {toAccount.currency}
+                        {bottomAccount.balance} · {bottomAccount.currency}
                       </span>
                     )}
                   </div>
@@ -691,7 +731,7 @@ export default function TransferPage() {
           gap: 2,
         }}
       >
-        {(["filled", "half", "empty"] as const).map((key) => (
+        {(["empty", "half", "filled"] as const).map((key) => (
           <button
             key={key}
             onClick={() => applyPreset(key)}
