@@ -111,7 +111,43 @@ function BankIcon() {
   );
 }
 
+type PresetKey = "filled" | "half" | "empty";
+
+const PRESETS: Record<
+  PresetKey,
+  {
+    rawDigits: string;
+    from: Account | null;
+    to: Account | null;
+    scheduled: string | null;
+    rotation: number;
+  }
+> = {
+  filled: {
+    rawDigits: "1145000",
+    from: ACCOUNTS[0],
+    to: ACCOUNTS[1],
+    scheduled: "On Thursday 16 April 2026",
+    rotation: 0,
+  },
+  half: {
+    rawDigits: "50000",
+    from: null,
+    to: ACCOUNTS[0],
+    scheduled: null,
+    rotation: 180,
+  },
+  empty: {
+    rawDigits: "",
+    from: null,
+    to: null,
+    scheduled: null,
+    rotation: 0,
+  },
+};
+
 export default function TransferPage() {
+  const [activePreset, setActivePreset] = useState<PresetKey>("filled");
   const [fromAccount, setFromAccount] = useState<Account | null>(ACCOUNTS[0]);
   const [toAccount, setToAccount] = useState<Account | null>(ACCOUNTS[1]);
   const [scheduledDate, setScheduledDate] = useState<string | null>(
@@ -119,9 +155,44 @@ export default function TransferPage() {
   );
   const [swapRotation, setSwapRotation] = useState(0);
   const [swapPhase, setSwapPhase] = useState<"idle" | "out" | "in">("idle");
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
 
   // Store raw digits only (no formatting). Display is derived.
-  const [rawDigits, setRawDigits] = useState("");
+  const [rawDigits, setRawDigits] = useState("1145000");
+
+  const applyPreset = (key: PresetKey) => {
+    const p = PRESETS[key];
+    const shouldAnimate = key !== "filled";
+
+    if (shouldAnimate && (fromAccount !== p.from || toAccount !== p.to)) {
+      // Animate out, swap, animate in
+      setAnimationsEnabled(true);
+      setSwapPhase("out");
+      setTimeout(() => {
+        setRawDigits(p.rawDigits);
+        setFromAccount(p.from);
+        setToAccount(p.to);
+        setScheduledDate(p.scheduled);
+        setSwapRotation(p.rotation);
+        setSwapPhase("in");
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setSwapPhase("idle");
+          });
+        });
+      }, 200);
+    } else {
+      // Instant — no animation
+      setAnimationsEnabled(false);
+      setSwapPhase("idle");
+      setRawDigits(p.rawDigits);
+      setFromAccount(p.from);
+      setToAccount(p.to);
+      setScheduledDate(p.scheduled);
+      setSwapRotation(p.rotation);
+    }
+    setActivePreset(key);
+  };
 
   const hasAmount = rawDigits !== "";
 
@@ -150,6 +221,7 @@ export default function TransferPage() {
 
   const handleSwap = () => {
     if (swapPhase !== "idle") return;
+    setAnimationsEnabled(true);
     // Phase 1: fade+slide out (down)
     setSwapPhase("out");
     setSwapRotation((prev) => prev + 180);
@@ -344,7 +416,7 @@ export default function TransferPage() {
                   gap: "var(--space-100)",
                 }}
               >
-                <div className={`account-content flex items-center flex-1 min-w-0${swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
+                <div className={`account-content flex items-center flex-1 min-w-0${animationsEnabled && swapPhase === "out" ? " swap-out" : animationsEnabled && swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
                   {fromAccount ? (
                     <AccountAvatar color={fromAccount.avatarColor} />
                   ) : (
@@ -605,6 +677,45 @@ export default function TransferPage() {
             </button>
           </div>
         </main>
+      </div>
+
+      {/* Segmented control */}
+      <div
+        className="fixed bottom-[20px] left-[20px] flex"
+        style={{
+          borderRadius: "var(--radius-rounded)",
+          border: "var(--border-md) solid var(--border-input)",
+          background: "var(--surface-level-3)",
+          boxShadow: "var(--shadow-card)",
+          padding: 3,
+          gap: 2,
+        }}
+      >
+        {(["filled", "half", "empty"] as const).map((key) => (
+          <button
+            key={key}
+            onClick={() => applyPreset(key)}
+            className="cursor-pointer"
+            style={{
+              borderRadius: "var(--radius-rounded)",
+              padding: "6px 14px",
+              fontSize: "var(--font-size-sm)",
+              fontWeight: 500,
+              lineHeight: 1,
+              border: "none",
+              background:
+                activePreset === key ? "var(--text-primary)" : "transparent",
+              color:
+                activePreset === key
+                  ? "var(--text-inverse)"
+                  : "var(--text-secondary)",
+              transition:
+                "background 160ms cubic-bezier(0.4,0,0.2,1), color 160ms cubic-bezier(0.4,0,0.2,1)",
+            }}
+          >
+            {key === "filled" ? "Filled" : key === "half" ? "Half" : "Empty"}
+          </button>
+        ))}
       </div>
     </div>
   );
