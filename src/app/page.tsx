@@ -230,15 +230,8 @@ export default function TransferPage() {
     if (swapPhase !== "idle") return;
 
     if (activePreset === "filled") {
-      // Filled: only animate the arrow, selects swap instantly
-      setAnimationsEnabled(false);
+      // Filled: only animate the arrow, nothing else changes
       setSwapRotation((prev) => prev + 180);
-      const tempAcc = topAccount;
-      setTopAccount(bottomAccount);
-      setBottomAccount(tempAcc);
-      const tempLabel = topLabel;
-      setTopLabel(bottomLabel);
-      setBottomLabel(tempLabel);
       return;
     }
 
