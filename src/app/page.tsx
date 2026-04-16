@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   NavArrowDown,
@@ -167,10 +167,35 @@ export default function TransferPage() {
   const [swapPhase, setSwapPhase] = useState<"idle" | "out" | "in">("idle");
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
 
+  const swapTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const topContentRef = useRef<HTMLDivElement>(null);
+
+  // Clear swap timer on unmount
+  useEffect(() => {
+    return () => {
+      if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
+    };
+  }, []);
+
+  const settleSwapPhase = () => {
+    const el = topContentRef.current;
+    if (!el) {
+      // Fallback if ref not attached
+      setSwapPhase("idle");
+      return;
+    }
+    const onEnd = () => {
+      el.removeEventListener("transitionend", onEnd);
+      setSwapPhase("idle");
+    };
+    el.addEventListener("transitionend", onEnd);
+  };
+
   // Store raw digits only (no formatting). Display is derived.
   const [rawDigits, setRawDigits] = useState("1145000");
 
   const applyPreset = (key: PresetKey) => {
+    if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
     const p = PRESETS[key];
     const shouldAnimate = key !== "filled";
     const accountsChanging = topAccount !== p.topAccount || bottomAccount !== p.bottomAccount;
@@ -178,7 +203,7 @@ export default function TransferPage() {
     if (shouldAnimate && accountsChanging) {
       setAnimationsEnabled(true);
       setSwapPhase("out");
-      setTimeout(() => {
+      swapTimerRef.current = setTimeout(() => {
         setRawDigits(p.rawDigits);
         setTopAccount(p.topAccount);
         setBottomAccount(p.bottomAccount);
@@ -187,11 +212,7 @@ export default function TransferPage() {
         setScheduledDate(p.scheduled);
         setSwapRotation(p.rotation);
         setSwapPhase("in");
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setSwapPhase("idle");
-          });
-        });
+        settleSwapPhase();
       }, 200);
     } else {
       setAnimationsEnabled(false);
@@ -209,11 +230,11 @@ export default function TransferPage() {
 
   const formatCurrency = (digits: string): string => {
     if (digits === "") return "";
-    if (digits.length === 1) return digits;
-    if (digits.length === 2) return digits;
 
-    const intPart = digits.slice(0, -2).replace(/^0+/, "") || "0";
-    const decPart = digits.slice(-2);
+    // Pad to at least 3 digits so decimal is always shown
+    const padded = digits.padStart(3, "0");
+    const intPart = padded.slice(0, -2).replace(/^0+/, "") || "0";
+    const decPart = padded.slice(-2);
 
     const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return `${formatted}.${decPart}`;
@@ -227,6 +248,7 @@ export default function TransferPage() {
   };
 
   const handleSwap = () => {
+    if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
     if (swapPhase !== "idle") return;
 
     if (activePreset === "filled") {
@@ -240,16 +262,12 @@ export default function TransferPage() {
       setAnimationsEnabled(true);
       setSwapPhase("out");
       setSwapRotation((prev) => prev + 180);
-      setTimeout(() => {
+      swapTimerRef.current = setTimeout(() => {
         const tempLabel = topLabel;
         setTopLabel(bottomLabel);
         setBottomLabel(tempLabel);
         setSwapPhase("in");
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setSwapPhase("idle");
-          });
-        });
+        settleSwapPhase();
       }, 200);
       return;
     }
@@ -303,7 +321,7 @@ export default function TransferPage() {
             priority
           />
           <button
-            className="flex items-center justify-center shrink-0 cursor-pointer"
+            className="pressable flex items-center justify-center shrink-0 cursor-pointer"
             style={{
               width: 32,
               height: 32,
@@ -400,7 +418,7 @@ export default function TransferPage() {
                 aria-label="Transfer amount"
               />
               <button
-                className="flex items-center shrink-0 cursor-pointer"
+                className="pressable flex items-center shrink-0 cursor-pointer"
                 style={{
                   height: 40,
                   borderRadius: "var(--radius-rounded)",
@@ -450,7 +468,7 @@ export default function TransferPage() {
                   gap: "var(--space-100)",
                 }}
               >
-                <div className={`account-content flex items-center flex-1 min-w-0${!animationsEnabled ? " no-transition" : swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
+                <div ref={topContentRef} className={`account-content flex items-center flex-1 min-w-0${!animationsEnabled ? " no-transition" : swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
                   {topAccount ? (
                     <AccountAvatar color={topAccount.avatarColor} />
                   ) : (
@@ -586,7 +604,7 @@ export default function TransferPage() {
               {/* Swap button - centered between From and To */}
               <button
                 onClick={handleSwap}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer"
+                className="pressable absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer"
                 style={{
                   width: "var(--space-250)",
                   height: "var(--space-250)",
@@ -614,7 +632,7 @@ export default function TransferPage() {
             {/* Schedule transfer */}
             {scheduledDate ? (
               <button
-                className="flex items-center justify-center cursor-pointer shrink-0"
+                className="pressable flex items-center justify-center cursor-pointer shrink-0"
                 style={{
                   height: 32,
                   borderRadius: "var(--radius-rounded)",
@@ -648,7 +666,7 @@ export default function TransferPage() {
               </button>
             ) : (
               <button
-                className="flex items-center justify-center cursor-pointer shrink-0"
+                className="pressable flex items-center justify-center cursor-pointer shrink-0"
                 style={{
                   height: 32,
                   borderRadius: "var(--radius-rounded)",
@@ -685,7 +703,7 @@ export default function TransferPage() {
             style={{ maxWidth: 526, gap: "var(--space-100)" }}
           >
             <button
-              className="flex flex-1 items-center justify-center cursor-pointer"
+              className="pressable flex flex-1 items-center justify-center cursor-pointer"
               style={{
                 height: 40,
                 borderRadius: "var(--radius-rounded)",
