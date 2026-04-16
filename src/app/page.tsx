@@ -457,7 +457,7 @@ export default function TransferPage() {
                   gap: "var(--space-100)",
                 }}
               >
-                <div className={`account-content flex items-center flex-1 min-w-0${animationsEnabled && swapPhase === "out" ? " swap-out" : animationsEnabled && swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
+                <div className={`account-content flex items-center flex-1 min-w-0${!animationsEnabled ? " no-transition" : swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
                   {topAccount ? (
                     <AccountAvatar color={topAccount.avatarColor} />
                   ) : (
@@ -529,7 +529,7 @@ export default function TransferPage() {
                   gap: "var(--space-100)",
                 }}
               >
-                <div className={`account-content account-content-second flex items-center flex-1 min-w-0${animationsEnabled && swapPhase === "out" ? " swap-out" : animationsEnabled && swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
+                <div className={`account-content account-content-second flex items-center flex-1 min-w-0${!animationsEnabled ? " no-transition" : swapPhase === "out" ? " swap-out" : swapPhase === "in" ? " swap-in" : ""}`} style={{ gap: "var(--space-100)" }}>
                   {bottomAccount ? (
                     <AccountAvatar color={bottomAccount.avatarColor} />
                   ) : (
