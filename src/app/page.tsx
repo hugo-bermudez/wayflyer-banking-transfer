@@ -138,8 +138,8 @@ const PRESETS: Record<
     rawDigits: "50000",
     topAccount: null,
     bottomAccount: ACCOUNTS[0],
-    topLabel: "To",
-    bottomLabel: "From",
+    topLabel: "From",
+    bottomLabel: "To",
     scheduled: null,
     rotation: 0,
   },
@@ -230,7 +230,8 @@ export default function TransferPage() {
     if (swapPhase !== "idle") return;
 
     if (activePreset === "filled") {
-      // Filled: only animate the arrow, swap data instantly
+      // Filled: only animate the arrow, selects swap instantly
+      setAnimationsEnabled(false);
       setSwapRotation((prev) => prev + 180);
       const tempAcc = topAccount;
       setTopAccount(bottomAccount);
