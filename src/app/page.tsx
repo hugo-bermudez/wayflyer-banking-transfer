@@ -721,36 +721,40 @@ export default function TransferPage() {
 
       {/* Segmented control */}
       <div
-        className="fixed bottom-[20px] left-[20px] flex"
+        className="fixed bottom-[20px] left-[20px] flex items-start"
         style={{
           borderRadius: "var(--radius-rounded)",
-          border: "var(--border-md) solid var(--border-input)",
-          background: "var(--surface-level-3)",
-          boxShadow: "var(--shadow-card)",
-          padding: 3,
-          gap: 2,
+          background: "var(--nav-background)",
+          paddingRight: 1.5,
         }}
       >
         {(["empty", "half", "filled"] as const).map((key) => (
           <button
             key={key}
             onClick={() => applyPreset(key)}
-            className="cursor-pointer"
+            className="cursor-pointer whitespace-nowrap font-medium"
             style={{
+              height: 32,
               borderRadius: "var(--radius-rounded)",
-              padding: "6px 14px",
+              paddingLeft: "var(--space-50)",
+              paddingRight: "var(--space-50)",
               fontSize: "var(--font-size-sm)",
-              fontWeight: 500,
               lineHeight: 1,
-              border: "none",
+              marginRight: -1.5,
               background:
-                activePreset === key ? "var(--text-primary)" : "transparent",
+                activePreset === key ? "var(--surface-level-3)" : "transparent",
+              border:
+                activePreset === key
+                  ? "var(--border-md) solid var(--border-input)"
+                  : "var(--border-md) solid transparent",
+              boxShadow:
+                activePreset === key ? "var(--shadow-button)" : "none",
               color:
                 activePreset === key
-                  ? "var(--text-inverse)"
+                  ? "var(--text-primary)"
                   : "var(--text-secondary)",
               transition:
-                "background 160ms cubic-bezier(0.4,0,0.2,1), color 160ms cubic-bezier(0.4,0,0.2,1)",
+                "background 160ms cubic-bezier(0.4,0,0.2,1), color 160ms cubic-bezier(0.4,0,0.2,1), border-color 160ms cubic-bezier(0.4,0,0.2,1), box-shadow 160ms cubic-bezier(0.4,0,0.2,1)",
             }}
           >
             {key === "filled" ? "Filled" : key === "half" ? "Half" : "Empty"}
